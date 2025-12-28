@@ -1,9 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+// Mark this page as dynamic since it uses searchParams
+export const dynamic = 'force-dynamic'
+
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ error: string }>
+  searchParams: Promise<{ error?: string }>
 }) {
   const params = await searchParams
 
