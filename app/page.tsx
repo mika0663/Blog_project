@@ -9,13 +9,13 @@ import { GET_PAGINATED_POSTS, GET_PAGINATED_POSTS_BY_CATEGORY, GET_CATEGORIES, G
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useMemo, useEffect, useState } from "react"
+import { useMemo, useEffect, useState, Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion } from "framer-motion"
 
 const POSTS_PER_PAGE = 5
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -379,5 +379,37 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col">
+        <BlogHeader />
+        <main className="flex-1 container py-12 md:py-20">
+          <div className="max-w-4xl mx-auto space-y-16">
+            <div className="space-y-4 animate-pulse">
+              <div className="h-16 bg-muted rounded w-3/4" />
+              <div className="h-6 bg-muted rounded w-1/2" />
+            </div>
+            <div className="grid gap-12 md:grid-cols-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-4 animate-pulse">
+                  <div className="aspect-video bg-muted rounded-lg" />
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="h-6 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }
