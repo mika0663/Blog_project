@@ -14,6 +14,21 @@ export const loginSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>
 
+// OTP login validation schema
+export const otpLoginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  otp: z
+    .string()
+    .min(8, "OTP must be 8 digits")
+    .max(8, "OTP must be 8 digits")
+    .regex(/^\d+$/, "OTP must contain only numbers"),
+})
+
+export type OtpLoginFormData = z.infer<typeof otpLoginSchema>
+
 // Sign-up form validation schema
 export const signUpSchema = z
   .object({
