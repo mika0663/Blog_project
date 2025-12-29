@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { UserPlus, Mail, Lock, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react"
+import { Chrome } from "lucide-react"
+import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -33,6 +36,7 @@ export default function Page() {
   })
 
   const isLoading = form.formState.isSubmitting
+  const [googleLoading, setGoogleLoading] = useState(false)
   const password = form.watch("password")
   const confirmPassword = form.watch("confirmPassword")
 
@@ -53,6 +57,38 @@ export default function Page() {
       form.setError("root", {
         message: error instanceof Error ? error.message : "An error occurred",
       })
+    }
+  }
+
+  const handleGoogleSignUp = async () => {
+    const supabase = createClient()
+    setGoogleLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/protected`,
+        },
+      })
+
+      if (error) {
+        // Check for specific error about provider not being enabled
+        if (error.message?.includes("provider is not enabled") || error.message?.includes("Unsupported provider")) {
+          toast.error(
+            "Google OAuth is not enabled. Please enable it in your Supabase dashboard under Authentication > Providers > Google."
+          )
+        } else {
+          throw error
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && !error.message?.includes("provider is not enabled")) {
+        toast.error(
+          error.message || "Failed to sign up with Google. Please try again."
+        )
+      }
+      setGoogleLoading(false)
     }
   }
 
@@ -232,6 +268,42 @@ export default function Page() {
                   </Button>
                 </form>
               </Form>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google OAuth Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-11 text-base"
+                onClick={handleGoogleSignUp}
+                disabled={googleLoading || isLoading}
+              >
+                {googleLoading ? (
+                  <span className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="h-4 w-4 rounded-full border-2 border-current border-t-transparent"
+                    />
+                    Connecting...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Chrome className="h-5 w-5" />
+                    Continue with Google
+                  </span>
+                )}
+              </Button>
+
               <div className="mt-6 text-center text-sm">
                 <p className="text-muted-foreground">
                   Already have an account?{" "}

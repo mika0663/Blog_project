@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { LogIn, Mail, Lock, ArrowRight, Sparkles, KeyRound } from "lucide-react"
+import { Chrome } from "lucide-react"
 import { motion } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -30,6 +31,7 @@ export default function Page() {
   const [loginMode, setLoginMode] = useState<"password" | "otp">("password")
   const [otpSent, setOtpSent] = useState(false)
   const [otpLoading, setOtpLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const passwordForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -131,6 +133,38 @@ export default function Page() {
     setLoginMode(mode)
     setOtpSent(false)
     otpForm.reset()
+  }
+
+  const handleGoogleLogin = async () => {
+    const supabase = createClient()
+    setGoogleLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/protected`,
+        },
+      })
+
+      if (error) {
+        // Check for specific error about provider not being enabled
+        if (error.message?.includes("provider is not enabled") || error.message?.includes("Unsupported provider")) {
+          toast.error(
+            "Google OAuth is not enabled. Please enable it in your Supabase dashboard under Authentication > Providers > Google."
+          )
+        } else {
+          throw error
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && !error.message?.includes("provider is not enabled")) {
+        toast.error(
+          error.message || "Failed to sign in with Google. Please try again."
+        )
+      }
+      setGoogleLoading(false)
+    }
   }
 
   return (
@@ -403,6 +437,41 @@ export default function Page() {
                   </Form>
                 </TabsContent>
               </Tabs>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* Google OAuth Button */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-11 text-base"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading || isPasswordLoading || isOtpLoading}
+              >
+                {googleLoading ? (
+                  <span className="flex items-center gap-2">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="h-4 w-4 rounded-full border-2 border-current border-t-transparent"
+                    />
+                    Connecting...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Chrome className="h-5 w-5" />
+                    Continue with Google
+                  </span>
+                )}
+              </Button>
 
               <div className="mt-6 text-center text-sm">
                 <p className="text-muted-foreground">
